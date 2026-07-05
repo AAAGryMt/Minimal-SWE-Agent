@@ -169,6 +169,22 @@ class Config(BaseModel):
         if api_base:
             self.llm.api_base = api_base
 
+    def save(self, path: Path | None = None) -> Path:
+        """将当前完整配置序列化写入 YAML 文件，默认保存到 ./config.yaml。
+
+        文件不存在则自动创建（包括父目录）。
+        """
+        import yaml
+
+        target = Path(path) if path else Path.cwd() / "config.yaml"
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        data = self.model_dump(exclude_none=True)
+        with open(target, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+        return target
+
 
 def _load_dotenv():
     """尝试加载 .env 文件到 os.environ（失败不报错，因为 .env 是可选的）。"""

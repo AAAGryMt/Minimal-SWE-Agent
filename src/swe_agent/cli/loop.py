@@ -25,6 +25,20 @@ from swe_agent.cli.display import (
 from swe_agent.cli.runner import run_agent
 
 
+def _print_config_help():
+    print(f"""
+{Color.BRIGHT_CYAN}/config ── 格式帮助{Color.RESET}
+  /config                        查看当前配置
+  /config model <name>           设置 LLM 模型
+  /config key <api_key>          设置 API Key
+  /config base <url>             设置 API Base URL
+  /config max_tokens <n>         设置最大 token 数
+  /config temperature <0-2>      设置采样温度
+
+{Color.DIM}修改后自动保存到 ./config.yaml{Color.RESET}
+""")
+
+
 async def interactive_loop(config: Config, cli_user_id: str | None = None):
     # 1) 初始化 prompt_toolkit：补全、样式、Ctrl+U 清空、历史持久化
     completer = WordCompleter(["/help", "/clear", "/exit", "/compact", "/prompt", "/memory", "/config"], ignore_case=True)
@@ -133,30 +147,47 @@ async def interactive_loop(config: Config, cli_user_id: str | None = None):
                 elif cmd.startswith("/config"):
                     parts = user_input[len("/config"):].strip()
                     if not parts:
+                        _print_config_help()
                         key = config.llm.api_key
                         masked = "****" + key[-4:] if key and len(key) > 4 else "(not set)"
-                        print(f"\n{Color.BRIGHT_CYAN}LLM Configuration:{Color.RESET}")
-                        print(f"  model:    {config.llm.model}")
-                        print(f"  api_key:  {masked}")
-                        print(f"  api_base: {config.llm.api_base or '(default)'}")
-                        print(f"  max_tokens: {config.llm.max_tokens or '(unlimited)'}")
+                        print(f"{Color.BRIGHT_CYAN}LLM Configuration:{Color.RESET}")
+                        print(f"  model:       {config.llm.model}")
+                        print(f"  api_key:     {masked}")
+                        print(f"  api_base:    {config.llm.api_base or '(default)'}")
+                        print(f"  max_tokens:  {config.llm.max_tokens or '(unlimited)'}")
                         print(f"  temperature: {config.llm.temperature}")
                         print()
                     else:
                         sub = parts.split(None, 1)
                         sub_cmd = sub[0].lower()
                         sub_val = sub[1] if len(sub) > 1 else ""
-                        if sub_cmd == "model" and sub_val:
+
+                        set_fields = {"model", "key", "base", "max_tokens", "temperature"}
+                        if sub_cmd not in set_fields or not sub_val:
+                            _print_config_help()
+                            continue
+
+                        if sub_cmd == "model":
                             config.llm.model = sub_val
-                            print(f"\n{Color.GREEN}Model set to: {sub_val}{Color.RESET}\n")
-                        elif sub_cmd == "key" and sub_val:
+                        elif sub_cmd == "key":
                             config.llm.api_key = sub_val
-                            print(f"\n{Color.GREEN}API key updated{Color.RESET}\n")
-                        elif sub_cmd == "base" and sub_val:
+                        elif sub_cmd == "base":
                             config.llm.api_base = sub_val
-                            print(f"\n{Color.GREEN}API base set to: {sub_val}{Color.RESET}\n")
-                        else:
-                            print(f"\n{Color.YELLOW}Usage: /config [model|key|base] <value>{Color.RESET}\n")
+                        elif sub_cmd == "max_tokens":
+                            try:
+                                config.llm.max_tokens = int(sub_val)
+                            except ValueError:
+                                print(f"\n{Color.YELLOW}max_tokens 必须是整数: {sub_val}{Color.RESET}\n")
+                                continue
+                        elif sub_cmd == "temperature":
+                            try:
+                                config.llm.temperature = float(sub_val)
+                            except ValueError:
+                                print(f"\n{Color.YELLOW}temperature 必须是数字: {sub_val}{Color.RESET}\n")
+                                continue
+
+                        saved_path = config.save()
+                        print(f"\n{Color.GREEN}{sub_cmd} 已设置 → 已保存到 {saved_path}{Color.RESET}\n")
                     continue
                 else:
                     print(f"{Color.RED}Unknown: {user_input}{Color.RESET}")
