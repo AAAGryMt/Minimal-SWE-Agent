@@ -62,14 +62,14 @@ class MemoryManager:
         api_base = self.config.api_base or self.llm_config.api_base
 
         if api_key:
-            os.environ.setdefault("OPENAI_API_KEY", api_key)
+            os.environ["OPENAI_API_KEY"] = api_key
             model = self.config.llm_model or self.llm_config.model
             provider = model.split("/")[0] if "/" in model else "openai"
             provider_key = provider.upper() + "_API_KEY"
-            os.environ.setdefault(provider_key, api_key)
+            os.environ[provider_key] = api_key
 
         if api_base:
-            os.environ.setdefault("OPENAI_API_BASE", api_base)
+            os.environ["OPENAI_API_BASE"] = api_base
 
     def _get_mem0(self):
         """懒加载 mem0.Memory 实例。
@@ -82,6 +82,18 @@ class MemoryManager:
         self._init_env()
 
         embedder_model = "sentence-transformers/all-MiniLM-L6-v2"
+
+        api_key = self.config.api_key or self.llm_config.api_key
+        api_base = self.config.api_base or self.llm_config.api_base
+
+        llm_config: dict = {
+            "model": self.config.llm_model or self.llm_config.model,
+            "max_tokens": self.config.compact_max_tokens,
+        }
+        if api_key:
+            llm_config["api_key"] = api_key
+        if api_base:
+            llm_config["api_base"] = api_base
 
         config: dict = {
             "vector_store": {
@@ -99,10 +111,7 @@ class MemoryManager:
             },
             "llm": {
                 "provider": "litellm",
-                "config": {
-                    "model": self.config.llm_model or self.llm_config.model,
-                    "max_tokens": self.config.compact_max_tokens,
-                },
+                "config": llm_config,
             },
         }
 
@@ -125,18 +134,25 @@ class MemoryManager:
         self._system_prompt = prompt
 
     def store_interaction(self, user_id: str, session_id: str, role: str, content: str):
-        """存储单条交互记录到 mem0 向量数据库。"""
+        """存储单条交互记录到 mem0 向量数据库。认证失败时降级为跳过，不崩进程。"""
         if not self.enabled:
             return
         if not content:
             return
         m = self._get_mem0()
-        m.add(
-            content,
-            user_id=user_id,
-            agent_id=role,
-            metadata={"session_id": session_id, "role": role},
-        )
+        try:
+            m.add(
+                content,
+                user_id=user_id,
+                agent_id=role,
+                metadata={"session_id": session_id, "role": role},
+            )
+        except Exception as e:
+            error_msg = str(e)
+            if "auth" in error_msg.lower() or "401" in error_msg:
+                print(f"\033[33m[Memory] Skipping store: authentication failed ({error_msg[:120]})\033[0m")
+            else:
+                raise
 
     def get_context(self, user_id: str, query: str, limit: int = 5) -> str:
         """基于语义相似度检索与当前查询相关的历史记忆，拼接为文本返回。"""
