@@ -56,9 +56,10 @@ git clone https://github.com/AAAGryMt/Minimal-SWE-Agent.git
 cd minimal-swe-agent
 uv sync
 
-# 配置（二选一）
-cp .env.example .env          # 环境变量方式
-# 或编辑 config.yaml          # 配置文件方式
+# 配置（任选其一）
+cp .env.example .env          # 方式一：环境变量
+# 或编辑 config.yaml          # 方式二：配置文件
+# 或启动后在 REPL 里 /config  # 方式三：交互式配置（自动写入 config.yaml）
 
 # 启动
 uv run swe-agent              # 交互式 REPL
