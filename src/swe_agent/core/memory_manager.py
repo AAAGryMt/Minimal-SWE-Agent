@@ -152,7 +152,7 @@ class MemoryManager:
             if "auth" in error_msg.lower() or "401" in error_msg:
                 print(f"\033[33m[Memory] Skipping store: authentication failed ({error_msg[:120]})\033[0m")
             else:
-                raise
+                print(f"\033[33m[Memory] Skipping store: {error_msg[:120]}\033[0m")
 
     def get_context(self, user_id: str, query: str, limit: int = 5) -> str:
         """基于语义相似度检索与当前查询相关的历史记忆，拼接为文本返回。"""
@@ -234,19 +234,18 @@ class MemoryManager:
         response = await acompletion(**kwargs)
         summary = response.choices[0].message.content or ""
 
-        # 删除原始记录，存回压缩摘要
-        m = self._get_mem0()
-        for mem in memories:
-            mem_id = _get_memory_id(mem)
-            if mem_id:
-                m.delete(mem_id)
-
         self.store_interaction(
             user_id=user_id,
             session_id=session_id,
             role="system",
             content=f"[Compacted session summary]\n{summary}",
         )
+
+        m = self._get_mem0()
+        for mem in memories:
+            mem_id = _get_memory_id(mem)
+            if mem_id:
+                m.delete(mem_id)
 
         return summary
 

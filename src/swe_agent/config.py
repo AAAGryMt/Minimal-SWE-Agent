@@ -180,6 +180,10 @@ class Config(BaseModel):
         target.parent.mkdir(parents=True, exist_ok=True)
 
         data = self.model_dump(exclude_none=True)
+        if data.get("llm", {}).get("api_key"):
+            del data["llm"]["api_key"]
+        if data.get("memory", {}).get("api_key"):
+            del data["memory"]["api_key"]
         with open(target, "w", encoding="utf-8") as f:
             yaml.safe_dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 

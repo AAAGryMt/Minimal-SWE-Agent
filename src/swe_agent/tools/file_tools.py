@@ -8,10 +8,13 @@ import tiktoken
 from .base import Tool, ToolResult
 from .security import resolve_safe_path
 
+_ENCODING = tiktoken.get_encoding("cl100k_base")
+
 
 def truncate_text_by_tokens(text: str, max_tokens: int) -> str:
-    encoding = tiktoken.get_encoding("cl100k_base")
-    token_count = len(encoding.encode(text))
+    if not text or max_tokens <= 0:
+        return text
+    token_count = len(_ENCODING.encode(text))
     if token_count <= max_tokens:
         return text
     char_count = len(text)
@@ -74,7 +77,7 @@ class ReadTool(Tool):
             with open(file_path, encoding="utf-8") as f:
                 lines = f.readlines()
             start = (offset - 1) if offset else 0
-            end = (start + limit) if limit else len(lines)
+            end = (start + limit) if limit is not None else len(lines)
             if start < 0:
                 start = 0
             if end > len(lines):
@@ -179,6 +182,8 @@ class EditTool(Tool):
             content = file_path.read_text(encoding="utf-8")
             if old_str not in content:
                 return ToolResult(success=False, error=f"Text not found in file: {old_str}")
+            if content.count(old_str) > 1:
+                return ToolResult(success=False, error=f"Text appears {content.count(old_str)} times, must be unique in file")
             new_content = content.replace(old_str, new_str)
             file_path.write_text(new_content, encoding="utf-8")
             return ToolResult(success=True, content=f"Successfully edited {file_path}")

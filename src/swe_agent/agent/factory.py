@@ -32,7 +32,7 @@ class AgentFactory:
         self._api_base_override = api_base
         self._max_tokens_override = max_tokens
         self._temperature_override = temperature if temperature is not None else None
-        self._max_iterations = max_iterations or (config.agent.max_iterations if config else 10)
+        self._max_iterations = max_iterations if max_iterations is not None else (config.agent.max_iterations if config else 10)
         self.workspace_dir = workspace_dir or "."
         self.memory_manager = memory_manager
         self.mcp_tools = mcp_tools or []

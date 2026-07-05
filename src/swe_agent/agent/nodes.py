@@ -107,7 +107,11 @@ async def _run_worker(
         prompt = "\n\n".join(context_parts)
         result = await agent.arun(prompt)
         m = getattr(result, "metrics", None)
-        tokens = (m.input_tokens + m.output_tokens) if m else 0
+        tokens = 0
+        try:
+            tokens = (m.input_tokens + m.output_tokens) if m else 0
+        except Exception:
+            pass
         return {
             "messages": [AIMessage(content=result.content or "")],
             "_tokens": tokens,
@@ -162,7 +166,11 @@ async def master_node(state: AgentState, factory: AgentFactory) -> dict[str, Any
         prompt = "\n\n".join(context_parts)
         result = await agent.arun(prompt)
         m = getattr(result, "metrics", None)
-        tokens = (m.input_tokens + m.output_tokens) if m else 0
+        tokens = 0
+        try:
+            tokens = (m.input_tokens + m.output_tokens) if m else 0
+        except Exception:
+            pass
         content = result.content or ""
 
         plan, next_agent, task_desc = _parse_master_output(content)
@@ -234,7 +242,11 @@ async def aggregator_node(state: AgentState, factory: AgentFactory) -> dict[str,
         summary_prompt += "\n\nProvide a clear final summary for the user."
         result = await agent.arun(summary_prompt)
         m = getattr(result, "metrics", None)
-        tokens = (m.input_tokens + m.output_tokens) if m else 0
+        tokens = 0
+        try:
+            tokens = (m.input_tokens + m.output_tokens) if m else 0
+        except Exception:
+            pass
         final = result.content or ""
 
         # 3) 增量存储消息到 mem0

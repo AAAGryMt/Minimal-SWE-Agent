@@ -135,13 +135,13 @@ async def run_agent(
             color = agent_name_colors.get(node_name, Color.WHITE)
             label = node_name.replace("_worker", "")
 
-            total_tokens += data.get("_tokens", 0)
+            total_tokens += data.get("_tokens") or 0
 
             # Master 节点：显示规划方案和下一跳路由
             if node_name == "master":
                 plan = data.get("plan", "")
                 next_agent = data.get("next_agent", "")
-                if data.get("_tokens", 0):
+                if data.get("_tokens") or 0:
                     context_msgs = len(data.get("messages", []))
                 print(f"  {color}🤔 {label}{Color.RESET}")
                 if plan:
