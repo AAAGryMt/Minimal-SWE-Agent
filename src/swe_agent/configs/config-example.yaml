@@ -1,0 +1,33 @@
+# ===== Minimal SWE Agent Configuration =====
+#
+# Configuration File Locations (in priority order):
+# 1) ./config.yaml - Current working directory
+# 2) ~/.minimal-swe-agent/config.yaml - User config directory
+# 3) <package>/swe_agent/config.yaml - Package installation directory
+#
+# To use this config:
+# - Copy this file to config.yaml in one of the above locations
+# - Fill in your API key and customize settings as needed
+# - Environment variables (LLM_MODEL, LLM_API_KEY, etc.) override YAML values
+
+# ===== LLM Configuration (via agno.models.litellm.LiteLLM) =====
+llm:
+  model: "gpt-4o"           # LLM model (any LiteLLM-supported model)
+  api_key: null              # API key (or set LLM_API_KEY in .env)
+  api_base: null             # Custom API base URL (or set LLM_API_BASE in .env)
+  max_tokens: null           # Max tokens in response (or set LLM_MAX_TOKENS in .env)
+  temperature: null          # Sampling temperature 0-2 (or set LLM_TEMPERATURE in .env)
+
+# ===== Agent Configuration =====
+agent:
+  max_iterations: 10         # Maximum master-worker iterations
+  workspace_dir: "."         # Working directory for file operations
+  system_prompt_path: "configs/SYSTEM_PROMPT.md"  # System prompt file (relative to config search paths)
+
+# ===== Memory / Context Management (via mem0) =====
+memory:
+  directory: "~/.minimal-swe-agent/memories"  # Memory storage path
+  enabled: true              # Enable/disable memory (set MEMORY_ENABLED in .env)
+  llm_model: null            # LLM model for memory compact (defaults to llm.model)
+  compact_max_tokens: 2000   # Max tokens for /compact output
+  system_prompt: null        # Custom system prompt (set SYSTEM_PROMPT in .env)

@@ -1,0 +1,67 @@
+# Python bytecode
+__pycache__/
+*.py[cdo]
+*.so
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# User config (may contain API keys)
+config.yaml
+mcp.json
+
+# Runtime artifacts
+.memories/
+.history/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage & testing
+htmlcov/
+.coverage
+.coverage.*
+*.cover
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+
+# Logs
+*.log
+
+# Type checking
+.mypy_cache/
+.pyre/
