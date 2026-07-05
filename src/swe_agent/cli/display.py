@@ -97,6 +97,33 @@ def print_load_tools() -> None:
     print()
 
 
+def print_mcps_help() -> None:
+    print(f"""
+{Color.BRIGHT_BLUE}/mcps ── Usage{Color.RESET}
+  /mcps                        Show all configured MCP servers
+  /mcps list                   List all MCP servers with status
+  /mcps enable <name>          Enable a disabled MCP server
+  /mcps disable <name>         Disable an enabled MCP server
+  /mcps add <name> <cmd> ...   Add a stdio MCP server (rest after name = command + args)
+  /mcps remove <name>          Remove an MCP server
+
+{Color.DIM}Changes take effect on the next agent turn.{Color.RESET}
+""")
+
+
+def print_skills_help() -> None:
+    print(f"""
+{Color.BRIGHT_BLUE}/skills ── Usage{Color.RESET}
+  /skills                      List all available skills
+  /skills list                 List all skills with descriptions
+  /skills view <name>          View skill content
+  /skills refresh              Re-scan skills directory for new/removed skills
+  /skills dir [<path>]         Show or change skills search directory
+
+{Color.DIM}Changes take effect on the next agent turn.{Color.RESET}
+""")
+
+
 def print_help() -> None:
     """打印帮助信息，列出所有可用的交互命令及其说明，以及基本使用提示"""
     text = f"""
@@ -110,6 +137,9 @@ def print_help() -> None:
   {Color.BRIGHT_GREEN}/prompt reset{Color.RESET} - Reset to default system prompt
   {Color.BRIGHT_GREEN}/memory{Color.RESET}       - Show memory stats
   {Color.BRIGHT_GREEN}/memory clear{Color.RESET} - Clear all session memories
+  {Color.BRIGHT_GREEN}/config{Color.RESET}       - View/change LLM configuration
+  {Color.BRIGHT_GREEN}/mcps{Color.RESET}         - Manage MCP server connections
+  {Color.BRIGHT_GREEN}/skills{Color.RESET}       - Manage skills
 
 {Color.BOLD}{Color.BRIGHT_BLUE}Usage{Color.RESET}
   Enter your task directly. Agent will plan, execute tools, and respond.

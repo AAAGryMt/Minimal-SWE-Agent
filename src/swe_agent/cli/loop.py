@@ -1,5 +1,6 @@
 """Interactive REPL and one-shot execution modes."""
 
+import json
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +20,8 @@ from swe_agent.cli.display import (
     print_session_info,
     print_load_tools,
     print_help,
+    print_mcps_help,
+    print_skills_help,
     print_turn_stats,
     print_session_stats,
 )
@@ -39,9 +42,189 @@ def _print_config_help():
 """)
 
 
+def _save_mcp_json(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def _handle_mcps_command(config: Config, user_input: str) -> None:
+    rest = user_input[len("/mcps"):].strip()
+    parts = rest.split()
+
+    mcp_config_path = Config.find_config_file(config.tools.mcp_config_path)
+    if mcp_config_path is None:
+        mcp_config_path = Path.cwd() / config.tools.mcp_config_path
+
+    if mcp_config_path.exists():
+        with open(mcp_config_path, encoding="utf-8") as f:
+            mcp_config = json.load(f)
+    else:
+        mcp_config = {"mcpServers": {}}
+
+    servers = mcp_config.setdefault("mcpServers", {})
+
+    if not parts or parts[0] == "list":
+        print()
+        print(f"{Color.BRIGHT_BLUE}MCP Servers{Color.RESET}  ({Color.DIM}{mcp_config_path}{Color.RESET})")
+        print(f"{Color.DIM}{'─' * 52}{Color.RESET}")
+        if not servers:
+            print(f"  {Color.DIM}(none configured){Color.RESET}")
+        else:
+            for name, srv in servers.items():
+                disabled = srv.get("disabled", False)
+                status = f"{Color.GREEN}enabled{Color.RESET}" if not disabled else f"{Color.RED}disabled{Color.RESET}"
+                conn_type = srv.get("type", "stdio" if srv.get("command") else "streamable_http")
+                endpoint = srv.get("command") or srv.get("url", "")
+                args_str = " ".join(srv.get("args", []))
+                print(f"  {Color.BOLD}{name}{Color.RESET}  [{status}]")
+                print(f"    type: {conn_type}")
+                print(f"    {endpoint} {args_str}")
+        print()
+        return
+
+    sub_cmd = parts[0].lower()
+
+    if sub_cmd == "enable":
+        if len(parts) < 2:
+            print_mcps_help()
+            return
+        name = parts[1]
+        if name not in servers:
+            print(f"\n  {Color.RED}Unknown MCP server: {name}{Color.RESET}\n")
+            return
+        servers[name]["disabled"] = False
+        _save_mcp_json(mcp_config_path, mcp_config)
+        print(f"\n  {Color.GREEN}MCP server '{name}' enabled.{Color.RESET}  {Color.DIM}(next turn){Color.RESET}\n")
+
+    elif sub_cmd == "disable":
+        if len(parts) < 2:
+            print_mcps_help()
+            return
+        name = parts[1]
+        if name not in servers:
+            print(f"\n  {Color.RED}Unknown MCP server: {name}{Color.RESET}\n")
+            return
+        servers[name]["disabled"] = True
+        _save_mcp_json(mcp_config_path, mcp_config)
+        print(f"\n  {Color.GREEN}MCP server '{name}' disabled.{Color.RESET}  {Color.DIM}(next turn){Color.RESET}\n")
+
+    elif sub_cmd == "remove":
+        if len(parts) < 2:
+            print_mcps_help()
+            return
+        name = parts[1]
+        if name not in servers:
+            print(f"\n  {Color.RED}Unknown MCP server: {name}{Color.RESET}\n")
+            return
+        del servers[name]
+        _save_mcp_json(mcp_config_path, mcp_config)
+        print(f"\n  {Color.GREEN}MCP server '{name}' removed.{Color.RESET}\n")
+
+    elif sub_cmd == "add":
+        if len(parts) < 3:
+            print_mcps_help()
+            return
+        name = parts[1]
+        cmd = parts[2]
+        args = parts[3:]
+        servers[name] = {"command": cmd, "args": args, "disabled": False}
+        _save_mcp_json(mcp_config_path, mcp_config)
+        print(f"\n  {Color.GREEN}MCP server '{name}' added.{Color.RESET}\n")
+
+    else:
+        print_mcps_help()
+
+
+def _handle_skills_command(config: Config, user_input: str) -> None:
+    from swe_agent.tools.skill_loader import SkillLoader
+
+    rest = user_input[len("/skills"):].strip()
+    parts = rest.split()
+
+    sd = config.tools.skills_dir
+    sd_path = Path(sd)
+    if sd_path.is_absolute():
+        skills_dir = str(sd_path)
+    else:
+        candidates = [
+            Path.cwd() / sd,
+            Path.cwd() / "mini_agent" / sd,
+            Path(config.agent.workspace_dir) / sd,
+        ]
+        skills_dir = None
+        for p in candidates:
+            if p.exists():
+                skills_dir = str(p.resolve())
+                break
+        if skills_dir is None:
+            skills_dir = str(Path.cwd() / sd)
+
+    if not parts or parts[0] == "list":
+        loader = SkillLoader(skills_dir)
+        skills = loader.discover_skills()
+        print()
+        print(f"{Color.BRIGHT_BLUE}Skills{Color.RESET}  ({Color.DIM}{skills_dir}{Color.RESET})")
+        print(f"{Color.DIM}{'─' * 52}{Color.RESET}")
+        if not skills:
+            print(f"  {Color.DIM}(no skills found){Color.RESET}")
+        else:
+            for skill in skills:
+                print(f"  {Color.BOLD}{skill.name}{Color.RESET}")
+                print(f"    {skill.description}")
+        print()
+        return
+
+    sub_cmd = parts[0].lower()
+
+    if sub_cmd == "view":
+        if len(parts) < 2:
+            print_skills_help()
+            return
+        name = parts[1]
+        loader = SkillLoader(skills_dir)
+        loader.discover_skills()
+        skill = loader.get_skill(name)
+        if not skill:
+            avail = ", ".join(loader.list_skills())
+            print(f"\n  {Color.RED}Skill '{name}' not found.{Color.RESET}")
+            if avail:
+                print(f"  {Color.DIM}Available: {avail}{Color.RESET}")
+            print()
+            return
+        print()
+        print(f"{Color.BRIGHT_BLUE}Skill: {Color.BOLD}{skill.name}{Color.RESET}")
+        print(f"{Color.DIM}{'─' * 52}{Color.RESET}")
+        print(f"  {skill.description}")
+        print()
+        print(f"{Color.BRIGHT_BLUE}Content:{Color.RESET}")
+        for line in skill.content.split("\n"):
+            print(f"  {line}")
+        print()
+
+    elif sub_cmd == "refresh":
+        loader = SkillLoader(skills_dir)
+        skills = loader.discover_skills()
+        print(f"\n  {Color.GREEN}Re-scanned {skills_dir}{Color.RESET}")
+        print(f"  {Color.DIM}Found {len(skills)} skill(s){Color.RESET}\n")
+
+    elif sub_cmd == "dir":
+        if len(parts) >= 2:
+            config.tools.skills_dir = parts[1]
+            saved = config.save()
+            print(f"\n  {Color.GREEN}Skills directory set to: {parts[1]}{Color.RESET}")
+            print(f"  {Color.DIM}Saved to {saved}{Color.RESET}\n")
+        else:
+            print(f"\n  {Color.DIM}Current skills directory: {skills_dir}{Color.RESET}")
+            print(f"  {Color.DIM}Config value: {config.tools.skills_dir}{Color.RESET}\n")
+
+    else:
+        print_skills_help()
+
+
 async def interactive_loop(config: Config, cli_user_id: str | None = None):
     # 1) 初始化 prompt_toolkit：补全、样式、Ctrl+U 清空、历史持久化
-    completer = WordCompleter(["/help", "/clear", "/exit", "/compact", "/prompt", "/memory", "/config"], ignore_case=True)
+    completer = WordCompleter(["/help", "/clear", "/exit", "/compact", "/prompt", "/memory", "/config", "/mcps", "/skills"], ignore_case=True)
     prompt_style = Style.from_dict({"prompt": "#3fb950 bold"})
     kb = KeyBindings()
 
@@ -188,6 +371,12 @@ async def interactive_loop(config: Config, cli_user_id: str | None = None):
 
                         saved_path = config.save()
                         print(f"\n{Color.GREEN}{sub_cmd} 已设置 → 已保存到 {saved_path}{Color.RESET}\n")
+                    continue
+                elif user_input.lower().startswith("/mcps"):
+                    _handle_mcps_command(config, user_input)
+                    continue
+                elif user_input.lower().startswith("/skills"):
+                    _handle_skills_command(config, user_input)
                     continue
                 else:
                     print(f"{Color.RED}Unknown: {user_input}{Color.RESET}")
