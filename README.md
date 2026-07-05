@@ -73,10 +73,13 @@ uv run swe-agent -t "任务"    # 单次执行
 # CLI 参数覆盖
 swe-agent -m gpt-4o -k sk-xxx -b https://api.openai.com
 
-# REPL 内切换
+# REPL 内设置（自动保存到 ./config.yaml，下次启动生效）
+/config                        # 查看帮助 + 当前配置
 /config model gpt-4o
 /config key sk-new
 /config base https://api.deepseek.com
+/config max_tokens 4096
+/config temperature 0.7
 ```
 
 ## 项目结构
