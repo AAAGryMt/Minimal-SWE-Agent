@@ -83,18 +83,6 @@ class MemoryManager:
 
         embedder_model = "sentence-transformers/all-MiniLM-L6-v2"
 
-        api_key = self.config.api_key or self.llm_config.api_key
-        api_base = self.config.api_base or self.llm_config.api_base
-
-        llm_config: dict = {
-            "model": self.config.llm_model or self.llm_config.model,
-            "max_tokens": self.config.compact_max_tokens,
-        }
-        if api_key:
-            llm_config["api_key"] = api_key
-        if api_base:
-            llm_config["api_base"] = api_base
-
         config: dict = {
             "vector_store": {
                 "provider": "qdrant",
@@ -111,7 +99,10 @@ class MemoryManager:
             },
             "llm": {
                 "provider": "litellm",
-                "config": llm_config,
+                "config": {
+                    "model": self.config.llm_model or self.llm_config.model,
+                    "max_tokens": self.config.compact_max_tokens,
+                },
             },
         }
 
