@@ -27,7 +27,7 @@ from swe_agent.cli.runner import run_agent
 
 def _print_config_help():
     print(f"""
-{Color.BRIGHT_CYAN}/config ── 格式帮助{Color.RESET}
+{Color.BRIGHT_BLUE}/config ── Usage{Color.RESET}
   /config                        查看当前配置
   /config model <name>           设置 LLM 模型
   /config key <api_key>          设置 API Key
@@ -42,7 +42,7 @@ def _print_config_help():
 async def interactive_loop(config: Config, cli_user_id: str | None = None):
     # 1) 初始化 prompt_toolkit：补全、样式、Ctrl+U 清空、历史持久化
     completer = WordCompleter(["/help", "/clear", "/exit", "/compact", "/prompt", "/memory", "/config"], ignore_case=True)
-    prompt_style = Style.from_dict({"prompt": "#00ff00 bold"})
+    prompt_style = Style.from_dict({"prompt": "#3fb950 bold"})
     kb = KeyBindings()
 
     # Ctrl+U 清空当前输入
@@ -107,7 +107,7 @@ async def interactive_loop(config: Config, cli_user_id: str | None = None):
                     print("\033[2J\033[H", end="")
                     continue
                 elif cmd == "/compact":
-                    print(f"\n{Color.BRIGHT_CYAN}Compacting session context...{Color.RESET}")
+                    print(f"\n{Color.BRIGHT_BLUE}Compacting session context...{Color.RESET}")
                     summary = await memory_manager.compact_session(
                         user_id=user_id,
                         session_id=session_id,
@@ -121,7 +121,7 @@ async def interactive_loop(config: Config, cli_user_id: str | None = None):
                     if not parts:
                         current = memory_manager.system_prompt
                         if current:
-                            print(f"\n{Color.BRIGHT_CYAN}Current system prompt:{Color.RESET}")
+                            print(f"\n{Color.BRIGHT_BLUE}Current system prompt:{Color.RESET}")
                             print(f"  {current}\n")
                         else:
                             print(f"\n{Color.DIM}No custom system prompt set.{Color.RESET}\n")
@@ -140,7 +140,7 @@ async def interactive_loop(config: Config, cli_user_id: str | None = None):
                     else:
                         cnt = memory_manager.get_memory_count(user_id=user_id, session_id=session_id)
                         total = memory_manager.get_memory_count(user_id=user_id)
-                        print(f"\n{Color.BRIGHT_CYAN}Memory stats:{Color.RESET}")
+                        print(f"\n{Color.BRIGHT_BLUE}Memory stats:{Color.RESET}")
                         print(f"  Session memories: {cnt}")
                         print(f"  Total memories (user): {total}\n")
                     continue
@@ -150,7 +150,7 @@ async def interactive_loop(config: Config, cli_user_id: str | None = None):
                         _print_config_help()
                         key = config.llm.api_key
                         masked = "****" + key[-4:] if key and len(key) > 4 else "(not set)"
-                        print(f"{Color.BRIGHT_CYAN}LLM Configuration:{Color.RESET}")
+                        print(f"{Color.BRIGHT_BLUE}LLM Configuration:{Color.RESET}")
                         print(f"  model:       {config.llm.model}")
                         print(f"  api_key:     {masked}")
                         print(f"  api_base:    {config.llm.api_base or '(default)'}")
@@ -237,7 +237,7 @@ async def interactive_loop(config: Config, cli_user_id: str | None = None):
 
     # 5) 退出：打印会话统计
     print_session_stats(agent_turns, session_start)
-    print(f"{Color.BRIGHT_YELLOW}Bye!{Color.RESET}\n")
+    print(f"{Color.BRIGHT_GREEN}Bye!{Color.RESET}\n")
 
 
 async def run_once(task: str, config: Config, cli_user_id: str | None = None):

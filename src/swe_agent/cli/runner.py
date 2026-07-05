@@ -42,7 +42,7 @@ async def run_agent(
         if mcp_config_path:
             from swe_agent.tools.mcp_loader import load_mcp_tools_async
 
-            print(f"{Color.BRIGHT_CYAN}Loading MCP tools...{Color.RESET}")
+            print(f"{Color.BRIGHT_BLUE}Loading MCP tools...{Color.RESET}")
             mcp_tools = await load_mcp_tools_async(str(mcp_config_path))
             print(f"  {Color.GREEN}Loaded {len(mcp_tools)} MCP tools{Color.RESET}")
         else:
@@ -111,7 +111,7 @@ async def run_agent(
     }
 
     # 6) 流式执行：每个 Worker 节点用不同颜色区分，实时打印 Plan/工具输出/最终结果
-    worker_colors = [Color.YELLOW, Color.GREEN, Color.CYAN]
+    worker_colors = [Color.YELLOW, Color.GREEN, Color.BLUE]
     agent_name_colors = {MASTER: Color.BLUE}
     for i, w in enumerate(WORKERS):
         agent_name_colors[w.name] = worker_colors[i % len(worker_colors)]

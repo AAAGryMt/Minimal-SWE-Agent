@@ -8,26 +8,36 @@ from swe_agent.config import Config
 
 
 class Color:
-    """ANSI 转义序列颜色常量，用于终端彩色文本输出。"""
+    """ANSI 转义序列颜色常量 —— GitHub Primer 风格配色。
 
-    # 样式控制 
-    RESET = "\033[0m"       # 重置所有属性
-    BOLD = "\033[1m"        # 粗体/高亮
-    DIM = "\033[2m"         # 暗淡（灰色）
+    色调映射（Primer → ANSI）：
+        Green  #3fb950 → 32/92     Red    #f85149 → 31
+        Blue   #58a6ff → 34/94     Yellow #d29922 → 33/93
+        Gray   #8b949e → 2 /90     White  #e6edf3 → 37/97
+    """
+
+    # 样式控制
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
 
     # 标准前景色（30-37）
-    RED = "\033[31m"        # 红色
-    GREEN = "\033[32m"      # 绿色
-    YELLOW = "\033[33m"     # 黄色
-    BLUE = "\033[34m"       # 蓝色
-    CYAN = "\033[36m"       # 青色
-    WHITE = "\033[37m"      # 白色
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    WHITE = "\033[37m"
 
     # 明亮前景色（90-97）
-    BRIGHT_GREEN = "\033[92m"   # 亮绿
-    BRIGHT_YELLOW = "\033[93m"  # 亮黄
-    BRIGHT_BLUE = "\033[94m"    # 亮蓝
-    BRIGHT_CYAN = "\033[96m"    # 亮青
+    BRIGHT_GREEN = "\033[92m"
+    BRIGHT_YELLOW = "\033[93m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_MAGENTA = "\033[95m"
+
+    # 兼容别名（旧代码迁移）
+    CYAN = "\033[34m"
+    BRIGHT_CYAN = "\033[94m"
 
 
 def _display_width(s: str) -> int:
@@ -61,7 +71,7 @@ def print_session_info(config: Config) -> None:
     """在终端打印会话信息框"""
     box = 56
     print(f"{Color.DIM}┌{'─' * box}┐{Color.RESET}")
-    header = f"{Color.BRIGHT_CYAN}Session Info{Color.RESET}"
+    header = f"{Color.BRIGHT_BLUE}Session Info{Color.RESET}"
     hw = _display_width(header)
     hp = (box - 1 - hw) // 2
     print(f"{Color.DIM}│{Color.RESET} {' ' * hp}{header}{' ' * (box - 1 - hw - hp)}{Color.DIM}│{Color.RESET}")
@@ -90,7 +100,7 @@ def print_load_tools() -> None:
 def print_help() -> None:
     """打印帮助信息，列出所有可用的交互命令及其说明，以及基本使用提示"""
     text = f"""
-{Color.BOLD}{Color.BRIGHT_YELLOW}Commands:{Color.RESET}
+{Color.BOLD}{Color.BRIGHT_BLUE}Commands{Color.RESET}
   {Color.BRIGHT_GREEN}/help{Color.RESET}        - Show this help
   {Color.BRIGHT_GREEN}/clear{Color.RESET}       - Clear screen
   {Color.BRIGHT_GREEN}/exit{Color.RESET}        - Exit (also: exit, quit, q)
@@ -101,9 +111,9 @@ def print_help() -> None:
   {Color.BRIGHT_GREEN}/memory{Color.RESET}       - Show memory stats
   {Color.BRIGHT_GREEN}/memory clear{Color.RESET} - Clear all session memories
 
-{Color.BOLD}{Color.BRIGHT_YELLOW}Usage:{Color.RESET}
+{Color.BOLD}{Color.BRIGHT_BLUE}Usage{Color.RESET}
   Enter your task directly. Agent will plan, execute tools, and respond.
-  Use {Color.BRIGHT_CYAN}Ctrl+C{Color.RESET} to exit, {Color.BRIGHT_CYAN}Ctrl+U{Color.RESET} to clear input.
+  Use {Color.BRIGHT_BLUE}Ctrl+C{Color.RESET} to exit, {Color.BRIGHT_BLUE}Ctrl+U{Color.RESET} to clear input.
 """
     print(text)
 
@@ -119,7 +129,7 @@ def print_turn_stats(duration_s: float, tool_count: int, msg_count: int, tokens:
     """打印单轮 Agent 交互的统计信息"""
     m, s = divmod(int(duration_s), 60)
     print()
-    print(f"{Color.BOLD}{Color.BRIGHT_CYAN}Turn Statistics:{Color.RESET}")
+    print(f"{Color.BOLD}{Color.BRIGHT_BLUE}Turn Statistics{Color.RESET}")
     print(f"{Color.DIM}{'─' * 52}{Color.RESET}")
     print(f"  Duration: {m:02d}:{s:02d}")
     print(f"  Messages: {msg_count}")
@@ -133,7 +143,7 @@ def print_session_stats(turns: int, start: datetime) -> None:
     """打印整个会话的统计信息，包括总耗时和 Agent 执行轮数"""
     duration = datetime.now() - start
     m, s = divmod(int(duration.total_seconds()), 60)
-    print(f"\n{Color.BOLD}{Color.BRIGHT_CYAN}Session Stats:{Color.RESET}")
+    print(f"\n{Color.BOLD}{Color.BRIGHT_BLUE}Session Stats{Color.RESET}")
     print(f"{Color.DIM}{'─' * 40}{Color.RESET}")
     print(f"  Duration: {m:02d}:{s:02d}")
     print(f"  Agent turns: {turns}")
